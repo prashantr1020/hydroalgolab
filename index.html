@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HydroAlgo — Motion Sensor Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F7F5;
+    --surface: #FFFFFF;
+    --border: #E4E4E0;
+    --text: #1A1A1A;
+    --text-2: #6B6B68;
+    --text-3: #A0A09C;
+    --blue: #2563EB;
+    --blue-light: #EFF6FF;
+    --green: #16A34A;
+    --green-light: #F0FDF4;
+    --red: #DC2626;
+    --red-light: #FEF2F2;
+    --amber: #D97706;
+    --amber-light: #FFFBEB;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', system-ui, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0 4px;
+  }
+
+  .header-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    font-family: var(--mono);
+  }
+
+  .header-version {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text-3);
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    font-family: var(--mono);
+  }
+
+  .card-body {
+    padding: 16px;
+  }
+
+  /* Device + Permission Status Card */
+  .status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .status-item {
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .status-item.green { background: var(--green-light); }
+  .status-item.red { background: var(--red-light); }
+  .status-item.amber { background: var(--amber-light); }
+  .status-item.blue { background: var(--blue-light); }
+  .status-item.neutral { background: var(--bg); border: 1px solid var(--border); }
+
+  .status-eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: var(--mono);
+    opacity: 0.6;
+  }
+
+  .status-item.green .status-eyebrow { color: var(--green); }
+  .status-item.red .status-eyebrow { color: var(--red); }
+  .status-item.amber .status-eyebrow { color: var(--amber); }
+  .status-item.blue .status-eyebrow { color: var(--blue); }
+
+  .status-value {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--mono);
+    line-height: 1.2;
+  }
+
+  .status-item.green .status-value { color: var(--green); }
+  .status-item.red .status-value { color: var(--red); }
+  .status-item.amber .status-value { color: var(--amber); }
+  .status-item.blue .status-value { color: var(--blue); }
+  .status-item.neutral .status-value { color: var(--text-2); }
+
+  .status-sub {
+    font-size: 10px;
+    color: var(--text-3);
+    font-family: var(--mono);
+  }
+
+  /* iOS Permission Banner */
+  .ios-banner {
+    background: var(--blue-light);
+    border: 1px solid #BFDBFE;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ios-banner-text {
+    font-size: 13px;
+    color: #1E40AF;
+    line-height: 1.5;
+  }
+
+  .ios-banner-text strong {
+    font-weight: 600;
+  }
+
+  .btn-primary {
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--sans);
+    cursor: pointer;
+    width: 100%;
+    letter-spacing: 0.01em;
+    transition: opacity 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .btn-primary:active { opacity: 0.8; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--sans);
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .btn-secondary:active { background: var(--bg); }
+
+  /* Live Sensor Readout */
+  .sensor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .sensor-cell {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 10px 10px 8px;
+    text-align: center;
+  }
+
+  .sensor-axis {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    font-family: var(--mono);
+    margin-bottom: 4px;
+  }
+
+  .sensor-val {
+    font-size: 16px;
+    font-weight: 500;
+    font-family: var(--mono);
+    color: var(--text);
+    transition: color 0.1s;
+  }
+
+  .sensor-val.active { color: var(--blue); }
+
+  .sensor-label {
+    font-size: 9px;
+    color: var(--text-3);
+    font-family: var(--mono);
+    margin-top: 2px;
+  }
+
+  /* Canvas */
+  .canvas-wrap {
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--bg);
+    position: relative;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 120px;
+  }
+
+  .canvas-legend {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    color: var(--text-3);
+    font-family: var(--mono);
+  }
+
+  .legend-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  /* State machine */
+  .state-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .state-row:last-child { border-bottom: none; }
+
+  .state-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .state-dot.active { background: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.2); }
+  .state-dot.done { background: var(--green); }
+  .state-dot.failed { background: var(--red); }
+
+  .state-name {
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--mono);
+    color: var(--text-2);
+    flex: 1;
+  }
+
+  .state-name.active { color: var(--blue); }
+  .state-name.done { color: var(--green); }
+  .state-name.failed { color: var(--red); }
+
+  .state-time {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text-3);
+  }
+
+  /* Controls */
+  .controls-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .btn-record {
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: opacity 0.15s;
+    -webkit-appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-record.recording {
+    background: var(--amber);
+    animation: pulse-btn 1.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-btn {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.75; }
+  }
+
+  .rec-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: white;
+  }
+
+  /* Session log */
+  .log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .log-item {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .log-badge {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--mono);
+    border-radius: 4px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+  }
+
+  .log-badge.pass { background: var(--green-light); color: var(--green); }
+  .log-badge.fail { background: var(--red-light); color: var(--red); }
+
+  .log-detail {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text-2);
+    flex: 1;
+  }
+
+  .log-time {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text-3);
+    flex-shrink: 0;
+  }
+
+  .log-empty {
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+    color: var(--text-3);
+    font-family: var(--mono);
+  }
+
+  /* Score row */
+  .score-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .score-cell {
+    text-align: center;
+    padding: 12px 8px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .score-num {
+    font-size: 22px;
+    font-weight: 600;
+    font-family: var(--mono);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .score-num.green { color: var(--green); }
+  .score-num.red { color: var(--red); }
+  .score-num.blue { color: var(--blue); }
+
+  .score-lbl {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    font-family: var(--mono);
+  }
+
+  /* Result flash */
+  .result-flash {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 32px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .result-flash.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    pointer-events: auto;
+  }
+
+  .result-icon { font-size: 40px; margin-bottom: 8px; }
+  .result-label { font-size: 18px; font-weight: 600; font-family: var(--mono); }
+  .result-detail { font-size: 12px; color: var(--text-3); font-family: var(--mono); margin-top: 4px; }
+
+  /* Pitch bar */
+  .pitch-bar-wrap {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pitch-track {
+    flex: 1;
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .pitch-fill {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    height: 100%;
+    background: var(--blue);
+    border-radius: 3px;
+    transition: width 0.05s, left 0.05s;
+  }
+
+  .pitch-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text-2);
+    min-width: 50px;
+    text-align: right;
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+
+  /* No motion support */
+  .no-support {
+    background: var(--red-light);
+    border: 1px solid #FECACA;
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 13px;
+    color: var(--red);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <span class="header-title">HydroAlgo Lab</span>
+    <span class="header-version">v0.1.0</span>
+  </div>
+
+  <!-- Device + Permission Status -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label">Device &amp; Sensor Status</span>
+    </div>
+    <div class="card-body">
+      <div class="status-grid">
+        <div class="status-item neutral" id="device-card">
+          <span class="status-eyebrow">Device</span>
+          <span class="status-value" id="device-name">Detecting…</span>
+          <span class="status-sub" id="device-os">—</span>
+        </div>
+        <div class="status-item neutral" id="permission-card">
+          <span class="status-eyebrow">Motion Sensor</span>
+          <span class="status-value" id="permission-status">Checking…</span>
+          <span class="status-sub" id="permission-sub">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- iOS Permission Banner (hidden by default) -->
+  <div class="ios-banner" id="ios-banner" style="display:none">
+    <div class="ios-banner-text">
+      <strong>iOS requires explicit permission</strong> to access motion sensors in the browser. Tap below to unlock sensor access for this session.
+    </div>
+    <button class="btn-primary" id="ios-permission-btn" onclick="requestIOSPermission()">
+      Unlock Motion Sensor
+    </button>
+  </div>
+
+  <!-- No Support Warning -->
+  <div class="no-support" id="no-support" style="display:none">
+    ⚠️ This device doesn't support DeviceMotion events, or you're on desktop. Open this page on your phone to test the sensor.
+  </div>
+
+  <!-- Live Sensor Readout -->
+  <div class="card" id="sensor-card">
+    <div class="card-header">
+      <span class="card-label">Live Accelerometer</span>
+      <span class="status-sub" id="sample-rate">— Hz</span>
+    </div>
+    <div class="card-body">
+      <div class="sensor-grid">
+        <div class="sensor-cell">
+          <div class="sensor-axis">X</div>
+          <div class="sensor-val" id="ax-val">—</div>
+          <div class="sensor-label">m/s²</div>
+        </div>
+        <div class="sensor-cell">
+          <div class="sensor-axis">Y</div>
+          <div class="sensor-val" id="ay-val">—</div>
+          <div class="sensor-label">m/s²</div>
+        </div>
+        <div class="sensor-cell">
+          <div class="sensor-axis">Z</div>
+          <div class="sensor-val" id="az-val">—</div>
+          <div class="sensor-label">m/s²</div>
+        </div>
+      </div>
+
+      <!-- Pitch bar -->
+      <div class="pitch-bar-wrap">
+        <span style="font-size:10px; font-family: var(--mono); color: var(--text-3); min-width:36px">PITCH</span>
+        <div class="pitch-track">
+          <div class="pitch-fill" id="pitch-fill" style="width:0; left:50%"></div>
+        </div>
+        <span class="pitch-label" id="pitch-val">—°</span>
+      </div>
+
+      <div class="canvas-wrap" style="margin-top: 12px;">
+        <canvas id="sensor-canvas" width="800" height="180"></canvas>
+      </div>
+      <div class="canvas-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#2563EB"></div>Pitch</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#16A34A"></div>Mag Accel</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#DC2626"></div>Threshold</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- State Machine -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label">Detection State</span>
+      <span class="status-sub" id="state-label">IDLE</span>
+    </div>
+    <div class="card-body" style="padding: 8px 16px;">
+      <div class="state-row">
+        <div class="state-dot" id="s-idle"></div>
+        <div class="state-name" id="sn-idle">IDLE — waiting for lift</div>
+        <div class="state-time" id="st-idle">—</div>
+      </div>
+      <div class="state-row">
+        <div class="state-dot" id="s-lift"></div>
+        <div class="state-name" id="sn-lift">LIFT — phone rising</div>
+        <div class="state-time" id="st-lift">—</div>
+      </div>
+      <div class="state-row">
+        <div class="state-dot" id="s-tilt"></div>
+        <div class="state-name" id="sn-tilt">TILT — tilted to drink</div>
+        <div class="state-time" id="st-tilt">—</div>
+      </div>
+      <div class="state-row">
+        <div class="state-dot" id="s-hold"></div>
+        <div class="state-name" id="sn-hold">HOLD — sustained drink</div>
+        <div class="state-time" id="st-hold">—</div>
+      </div>
+      <div class="state-row">
+        <div class="state-dot" id="s-lower"></div>
+        <div class="state-name" id="sn-lower">LOWER — phone going down</div>
+        <div class="state-time" id="st-lower">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label">Record</span>
+      <span class="status-sub" id="rec-timer">00:00</span>
+    </div>
+    <div class="card-body">
+      <div class="controls-row">
+        <button class="btn-record" id="rec-btn" onclick="toggleRecord()">
+          <div class="rec-dot"></div> Start Rep
+        </button>
+        <button class="btn-secondary" onclick="exportLog()">Export JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session Score -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label">Session</span>
+    </div>
+    <div class="card-body">
+      <div class="score-row">
+        <div class="score-cell">
+          <div class="score-num blue" id="total-count">0</div>
+          <div class="score-lbl">Total</div>
+        </div>
+        <div class="score-cell">
+          <div class="score-num green" id="pass-count">0</div>
+          <div class="score-lbl">Pass</div>
+        </div>
+        <div class="score-cell">
+          <div class="score-num red" id="fail-count">0</div>
+          <div class="score-lbl">Fail</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label">Rep Log</span>
+      <button style="font-size:11px; font-family: var(--mono); color: var(--text-3); background:none; border:none; cursor:pointer" onclick="clearLog()">Clear</button>
+    </div>
+    <div class="card-body" style="padding: 10px 16px;">
+      <div class="log-list" id="log-list">
+        <div class="log-empty" id="log-empty">No reps recorded yet. Hit Start Rep and simulate drinking.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Result Flash -->
+<div class="result-flash" id="result-flash">
+  <div class="result-icon" id="result-icon">✅</div>
+  <div class="result-label" id="result-label">PASS</div>
+  <div class="result-detail" id="result-detail">—</div>
+</div>
+
+<script>
+/* ========== DEVICE DETECTION ========== */
+const ua = navigator.userAgent;
+let isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+let isAndroid = /Android/.test(ua);
+let isMobile = isIOS || isAndroid;
+
+const deviceCard = document.getElementById('device-card');
+const deviceName = document.getElementById('device-name');
+const deviceOS = document.getElementById('device-os');
+const permCard = document.getElementById('permission-card');
+const permStatus = document.getElementById('permission-status');
+const permSub = document.getElementById('permission-sub');
+const iosBanner = document.getElementById('ios-banner');
+const noSupport = document.getElementById('no-support');
+
+function setDeviceUI() {
+  if (isIOS) {
+    deviceCard.className = 'status-item blue';
+    deviceName.textContent = 'iPhone / iPad';
+    deviceOS.textContent = 'iOS — WebKit';
+  } else if (isAndroid) {
+    deviceCard.className = 'status-item green';
+    deviceName.textContent = 'Android';
+    deviceOS.textContent = ua.match(/Android ([0-9.]+)/)?.[0] || 'Android';
+  } else {
+    deviceCard.className = 'status-item neutral';
+    deviceName.textContent = 'Desktop';
+    deviceOS.textContent = 'No motion sensor';
+  }
+}
+
+function setPermUI(state) {
+  // state: 'granted' | 'denied' | 'pending' | 'checking' | 'na'
+  permCard.className = 'status-item ' + ({
+    granted: 'green', denied: 'red', pending: 'amber', checking: 'neutral', na: 'neutral'
+  }[state] || 'neutral');
+
+  const labels = {
+    granted: ['✓ Working', 'Sensor active'],
+    denied:  ['✗ Blocked', 'Reload & allow'],
+    pending: ['Tap to Allow', 'Needs permission'],
+    checking:['Checking…', '—'],
+    na:      ['N/A', 'Not on mobile'],
+  };
+  permStatus.textContent = labels[state][0];
+  permSub.textContent = labels[state][1];
+}
+
+/* ========== iOS PERMISSION ========== */
+let sensorAllowed = false;
+
+async function requestIOSPermission() {
+  if (typeof DeviceMotionEvent !== 'undefined' &&
+      typeof DeviceMotionEvent.requestPermission === 'function') {
+    try {
+      const result = await DeviceMotionEvent.requestPermission();
+      if (result === 'granted') {
+        sensorAllowed = true;
+        iosBanner.style.display = 'none';
+        setPermUI('granted');
+        startSensor();
+      } else {
+        setPermUI('denied');
+      }
+    } catch (e) {
+      setPermUI('denied');
+    }
+  }
+}
+
+/* ========== INIT ========== */
+setDeviceUI();
+
+if (!isMobile) {
+  noSupport.style.display = 'block';
+  setPermUI('na');
+} else if (isIOS) {
+  if (typeof DeviceMotionEvent !== 'undefined' &&
+      typeof DeviceMotionEvent.requestPermission === 'function') {
+    // iOS 13+ needs explicit permission
+    setPermUI('pending');
+    iosBanner.style.display = 'flex';
+    iosBanner.style.flexDirection = 'column';
+  } else {
+    // Older iOS — auto try
+    setPermUI('checking');
+    startSensor();
+  }
+} else if (isAndroid) {
+  setPermUI('checking');
+  startSensor();
+}
+
+/* ========== SENSOR + ALGO ========== */
+const CANVAS_W = 800, CANVAS_H = 180;
+const canvas = document.getElementById('sensor-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = CANVAS_W;
+canvas.height = CANVAS_H;
+
+const axVal = document.getElementById('ax-val');
+const ayVal = document.getElementById('ay-val');
+const azVal = document.getElementById('az-val');
+const pitchVal = document.getElementById('pitch-val');
+const pitchFill = document.getElementById('pitch-fill');
+const sampleRateEl = document.getElementById('sample-rate');
+const stateLabel = document.getElementById('state-label');
+
+// Algo thresholds
+const LIFT_ACCEL_THRESH = 1.5;    // m/s² magnitude delta from baseline
+const TILT_PITCH_THRESH = 25;     // degrees — phone must tilt
+const HOLD_DURATION_MS  = 800;    // ms phone must stay tilted
+const LOWER_PITCH_THRESH = 15;    // degrees — pitch drop for lower
+const WINDOW_SECS = 8;            // seconds shown on canvas
+
+let graphData = { pitch: [], accel: [] };
+const MAX_POINTS = CANVAS_W;
+let baseline = { ax: 0, ay: 0, az: 9.8 };
+let calibrated = false;
+let calibSamples = [];
+let sensorStarted = false;
+let lastSampleTime = 0;
+let sampleCount = 0;
+let sampleRateTimer = null;
+
+// State machine
+const STATES = ['idle', 'lift', 'tilt', 'hold', 'lower'];
+let state = 'idle';
+let stateStartTime = 0;
+let holdTimer = null;
+
+// Session log
+let sessionLog = [];
+let totalReps = 0, passReps = 0, failReps = 0;
+
+// Recording
+let recording = false;
+let recStart = 0;
+let recInterval = null;
+let recBuffer = [];
+
+function setState(newState) {
+  const prev = state;
+  state = newState;
+  stateStartTime = Date.now();
+  stateLabel.textContent = newState.toUpperCase();
+
+  STATES.forEach(s => {
+    const dot = document.getElementById('s-' + s);
+    const nm  = document.getElementById('sn-' + s);
+    dot.className = 'state-dot';
+    nm.className  = 'state-name';
+  });
+
+  const dot = document.getElementById('s-' + newState);
+  const nm  = document.getElementById('sn-' + newState);
+  if (dot) { dot.className = 'state-dot active'; nm.className = 'state-name active'; }
+
+  if (prev !== 'idle') {
+    const elapsed = ((Date.now() - stateStartTime) / 1000).toFixed(1);
+    const prevEl = document.getElementById('st-' + prev);
+    if (prevEl) prevEl.textContent = elapsed + 's';
+  }
+}
+
+function markStateDone(s) {
+  const dot = document.getElementById('s-' + s);
+  const nm  = document.getElementById('sn-' + s);
+  if (dot) { dot.className = 'state-dot done'; nm.className = 'state-name done'; }
+}
+
+function onSensorData(event) {
+  if (!sensorAllowed && !isAndroid) return;
+
+  const acc = event.accelerationIncludingGravity;
+  if (!acc) return;
+
+  const ax = acc.x ?? 0, ay = acc.y ?? 0, az = acc.z ?? 0;
+  const now = Date.now();
+
+  // Sample rate tracking
+  sampleCount++;
+
+  // Calibration (first 60 samples ~1s)
+  if (!calibrated) {
+    calibSamples.push({ ax, ay, az });
+    if (calibSamples.length >= 60) {
+      baseline.ax = calibSamples.reduce((s,v)=>s+v.ax,0)/calibSamples.length;
+      baseline.ay = calibSamples.reduce((s,v)=>s+v.ay,0)/calibSamples.length;
+      baseline.az = calibSamples.reduce((s,v)=>s+v.az,0)/calibSamples.length;
+      calibrated = true;
+      setPermUI('granted');
+    }
+    return;
+  }
+
+  // Pitch from gravity (degrees)
+  // Works regardless of iOS/Android axis orientation
+  const pitch = Math.atan2(ay, Math.sqrt(ax*ax + az*az)) * (180/Math.PI);
+
+  // Magnitude delta from baseline
+  const dax = ax - baseline.ax, day = ay - baseline.ay, daz = az - baseline.az;
+  const mag = Math.sqrt(dax*dax + day*day + daz*daz);
+
+  // UI
+  axVal.textContent = ax.toFixed(2);
+  ayVal.textContent = ay.toFixed(2);
+  azVal.textContent = az.toFixed(2);
+  pitchVal.textContent = pitch.toFixed(1) + '°';
+
+  // Pitch bar: map -90..90 to 0..100%
+  const pitchNorm = (pitch + 90) / 180;
+  const fromCenter = pitchNorm - 0.5;
+  if (fromCenter >= 0) {
+    pitchFill.style.left = '50%';
+    pitchFill.style.width = (fromCenter * 100) + '%';
+    pitchFill.style.background = pitch > TILT_PITCH_THRESH ? 'var(--green)' : 'var(--blue)';
+  } else {
+    const w = Math.abs(fromCenter) * 100;
+    pitchFill.style.left = (50 - w) + '%';
+    pitchFill.style.width = w + '%';
+    pitchFill.style.background = 'var(--blue)';
+  }
+
+  // Graph data
+  graphData.pitch.push(pitch);
+  graphData.accel.push(mag);
+  if (graphData.pitch.length > MAX_POINTS) {
+    graphData.pitch.shift(); graphData.accel.shift();
+  }
+
+  // Recording buffer
+  if (recording) {
+    recBuffer.push({ t: now - recStart, ax, ay, az, pitch, mag });
+  }
+
+  // State machine
+  runAlgo(pitch, mag, now);
+
+  // Redraw canvas
+  drawCanvas();
+}
+
+function runAlgo(pitch, mag, now) {
+  switch (state) {
+    case 'idle':
+      if (mag > LIFT_ACCEL_THRESH) {
+        setState('lift');
+      }
+      break;
+
+    case 'lift':
+      if (pitch > TILT_PITCH_THRESH) {
+        setState('tilt');
+        markStateDone('lift');
+      } else if (mag < 0.3 && (now - stateStartTime > 2000)) {
+        // No tilt detected, reset
+        setState('idle');
+      }
+      break;
+
+    case 'tilt':
+      if (!holdTimer) {
+        holdTimer = setTimeout(() => {
+          holdTimer = null;
+          if (state === 'tilt') {
+            setState('hold');
+            markStateDone('tilt');
+          }
+        }, HOLD_DURATION_MS);
+      }
+      if (pitch < LOWER_PITCH_THRESH) {
+        // Dropped too early
+        clearTimeout(holdTimer); holdTimer = null;
+        recordResult(false, 'tilted but not held long enough');
+        setState('idle');
+      }
+      break;
+
+    case 'hold':
+      if (pitch < LOWER_PITCH_THRESH) {
+        setState('lower');
+        markStateDone('hold');
+      }
+      break;
+
+    case 'lower':
+      if (mag < 0.8 || (now - stateStartTime > 1500)) {
+        markStateDone('lower');
+        recordResult(true, `pitch peak ${Math.round(pitch)}°`);
+        setTimeout(() => setState('idle'), 300);
+      }
+      break;
+  }
+}
+
+function recordResult(pass, detail) {
+  totalReps++;
+  if (pass) passReps++; else failReps++;
+  document.getElementById('total-count').textContent = totalReps;
+  document.getElementById('pass-count').textContent = passReps;
+  document.getElementById('fail-count').textContent = failReps;
+
+  const entry = {
+    rep: totalReps,
+    result: pass ? 'PASS' : 'FAIL',
+    detail,
+    ts: new Date().toISOString(),
+    data: recording ? recBuffer.slice() : [],
+  };
+  sessionLog.push(entry);
+  saveLocal();
+  addLogItem(entry);
+  showFlash(pass, detail);
+}
+
+function addLogItem(entry) {
+  document.getElementById('log-empty')?.remove();
+  const el = document.createElement('div');
+  el.className = 'log-item';
+  const t = new Date(entry.ts);
+  el.innerHTML = `
+    <span class="log-badge ${entry.result === 'PASS' ? 'pass' : 'fail'}">${entry.result}</span>
+    <span class="log-detail">Rep ${entry.rep} — ${entry.detail}</span>
+    <span class="log-time">${t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span>
+  `;
+  const list = document.getElementById('log-list');
+  list.prepend(el);
+}
+
+function showFlash(pass, detail) {
+  const flash = document.getElementById('result-flash');
+  document.getElementById('result-icon').textContent = pass ? '✅' : '❌';
+  document.getElementById('result-label').textContent = pass ? 'PASS' : 'FAIL';
+  document.getElementById('result-detail').textContent = detail;
+  flash.classList.add('show');
+  setTimeout(() => flash.classList.remove('show'), 1800);
+}
+
+/* ========== CANVAS ========== */
+function drawCanvas() {
+  const W = CANVAS_W, H = CANVAS_H;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#F7F7F5';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = '#E4E4E0';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const y = (H / 4) * i;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  const n = graphData.pitch.length;
+  if (n < 2) return;
+
+  // Threshold line
+  const threshY = H - ((TILT_PITCH_THRESH + 90) / 180) * H;
+  ctx.strokeStyle = 'rgba(220,38,38,0.4)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(0, threshY); ctx.lineTo(W, threshY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  function plotLine(data, color, minVal, maxVal) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    data.forEach((v, i) => {
+      const x = (i / (MAX_POINTS - 1)) * W;
+      const norm = (v - minVal) / (maxVal - minVal);
+      const y = H - norm * (H * 0.85) - H * 0.05;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  plotLine(graphData.pitch, '#2563EB', -90, 90);
+  plotLine(graphData.accel, '#16A34A', 0, 15);
+}
+
+/* ========== RECORDING ========== */
+function toggleRecord() {
+  const btn = document.getElementById('rec-btn');
+  if (!recording) {
+    recording = true;
+    recStart = Date.now();
+    recBuffer = [];
+    setState('idle');
+    btn.className = 'btn-record recording';
+    btn.innerHTML = '<div class="rec-dot"></div> Recording…';
+    let elapsed = 0;
+    recInterval = setInterval(() => {
+      elapsed++;
+      const m = String(Math.floor(elapsed/60)).padStart(2,'0');
+      const s = String(elapsed%60).padStart(2,'0');
+      document.getElementById('rec-timer').textContent = m + ':' + s;
+    }, 1000);
+  } else {
+    recording = false;
+    clearInterval(recInterval);
+    btn.className = 'btn-record';
+    btn.innerHTML = '<div class="rec-dot"></div> Start Rep';
+  }
+}
+
+function exportLog() {
+  const blob = new Blob([JSON.stringify(sessionLog, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'hydroalgo_session_' + Date.now() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearLog() {
+  sessionLog = [];
+  totalReps = passReps = failReps = 0;
+  document.getElementById('total-count').textContent = 0;
+  document.getElementById('pass-count').textContent = 0;
+  document.getElementById('fail-count').textContent = 0;
+  const list = document.getElementById('log-list');
+  list.innerHTML = '<div class="log-empty" id="log-empty">No reps recorded yet. Hit Start Rep and simulate drinking.</div>';
+  saveLocal();
+}
+
+function saveLocal() {
+  try {
+    localStorage.setItem('hydroalgo_log', JSON.stringify(sessionLog));
+  } catch(e) {}
+}
+
+function loadLocal() {
+  try {
+    const saved = localStorage.getItem('hydroalgo_log');
+    if (saved) {
+      sessionLog = JSON.parse(saved);
+      sessionLog.forEach(e => {
+        totalReps++;
+        if (e.result === 'PASS') passReps++; else failReps++;
+        addLogItem(e);
+      });
+      document.getElementById('total-count').textContent = totalReps;
+      document.getElementById('pass-count').textContent = passReps;
+      document.getElementById('fail-count').textContent = failReps;
+    }
+  } catch(e) {}
+}
+
+/* ========== START SENSOR ========== */
+function startSensor() {
+  if (sensorStarted) return;
+
+  if (typeof DeviceMotionEvent === 'undefined') {
+    noSupport.style.display = 'block';
+    setPermUI('na');
+    return;
+  }
+
+  sensorStarted = true;
+  sensorAllowed = true;
+
+  window.addEventListener('devicemotion', onSensorData, { passive: true });
+
+  // Sample rate measurement
+  let rateCount = 0;
+  const rateInterval = setInterval(() => {
+    sampleRateEl.textContent = rateCount + ' Hz';
+    rateCount = 0;
+  }, 1000);
+
+  // Override sampleCount to track per-second
+  const origOnSensor = onSensorData;
+  window.removeEventListener('devicemotion', onSensorData);
+  window.addEventListener('devicemotion', (e) => {
+    rateCount++;
+    onSensorData(e);
+  }, { passive: true });
+}
+
+/* ========== BOOT ========== */
+setState('idle');
+loadLocal();
+drawCanvas();
+</script>
+</body>
+</html>
